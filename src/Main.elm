@@ -95,22 +95,33 @@ view model =
 
 viewMessages : List Message -> List (Html Msg)
 viewMessages messages =
-    [ h1 [] [ text "mandrills" ]
-    , ul [] (List.map viewMessage messages)
+    [ div [ class "center ph3 ph5-ns ph0l" ]
+        [ h1 [ class "f5 f4-ns f3-l normal pt5 pt6-ns black-50" ] [ text "Messages" ]
+        , div [ class "w-100 pv4 b--black-50" ]
+            [ table [ class "collapse" ] (List.append [ tableHead ] (List.map viewMessage messages))
+            ]
+        ]
     ]
+
+
+tableHead =
+    tr [ class "striped--light-gray" ]
+        [ th [ class "pv2 ph3 tl" ] [ text "To" ]
+        , th [ class "pv2 ph3 tl" ] [ text "Send At" ]
+        , th [ class "pv2 ph3 tl" ] [ text "Subject" ]
+        , th [ class "pv2 ph3 tl" ] [ text "From" ]
+        , th [ class "pv2 ph3 tl" ] [ text "Created" ]
+        ]
 
 
 viewMessage : Message -> Html Msg
 viewMessage message =
-    li []
-        [ ul []
-            [ li [] [ text ("_id: " ++ message.id) ]
-            , li [] [ text ("created_at: " ++ message.createdAt) ]
-            , li [] [ text ("send_at: " ++ message.sendAt) ]
-            , li [] [ text ("from_email: " ++ message.fromEmail) ]
-            , li [] [ text ("to: " ++ message.to) ]
-            , li [] [ text ("subject: " ++ message.subject) ]
-            ]
+    tr [ class "striped--light-gray" ]
+        [ td [ class "pv2 ph3 " ] [ text message.to ]
+        , td [ class "pv2 ph3 " ] [ text message.sendAt ]
+        , td [ class "pv2 ph3 " ] [ text message.subject ]
+        , td [ class "pv2 ph3 " ] [ text message.fromEmail ]
+        , td [ class "pv2 ph3 " ] [ text message.createdAt ]
         ]
 
 
