@@ -3,6 +3,7 @@ module Main exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (class)
+import Html.Events exposing (onClick)
 import Http
 import Json.Decode exposing (Decoder, field, list, map6, string)
 import Json.Encode as Encode
@@ -50,10 +51,20 @@ type Status
 
 type Msg
     = GotMessages (Result Http.Error (List Message))
+    | ClickedReload
 
 
 initialCmd : Cmd Msg
 initialCmd =
+    Http.post
+        { url = "https://mandrillapp.com/api/1.0/messages/list-scheduled.json"
+        , body = Http.jsonBody (Encode.object [ ( "key", Encode.string "REDACTED" ) ])
+        , expect = Http.expectJson GotMessages (list messageDecoder)
+        }
+
+
+reloadCmd : Cmd Msg
+reloadCmd =
     Http.post
         { url = "https://mandrillapp.com/api/1.0/messages/list-scheduled.json"
         , body = Http.jsonBody (Encode.object [ ( "key", Encode.string "REDACTED" ) ])
@@ -77,6 +88,9 @@ update msg model =
         GotMessages (Err httpError) ->
             ( { model | status = Errored "Server error" }, Cmd.none )
 
+        ClickedReload ->
+            ( { model | status = Loading }, reloadCmd )
+
 
 view : Model -> Html Msg
 view model =
@@ -97,6 +111,11 @@ viewMessages : List Message -> List (Html Msg)
 viewMessages messages =
     [ div [ class "center ph3 ph5-ns ph0l" ]
         [ h1 [ class "f5 f4-ns f3-l normal pt5 pt6-ns black-50" ] [ text "Messages" ]
+        , a
+            [ class "link underline u pl4 pointer"
+            , onClick ClickedReload
+            ]
+            [ text "Reload" ]
         , div [ class "w-100 pv4 b--black-50" ]
             [ table [ class "collapse" ] (List.append [ tableHead ] (List.map viewMessage messages))
             ]
