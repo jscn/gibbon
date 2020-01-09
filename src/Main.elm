@@ -51,16 +51,9 @@ type Status
 
 type Msg
     = GotMessages (Result Http.Error (List Message))
+    | GotMessage (Result Http.Error Message)
     | ClickedReload
-
-
-initialCmd : Cmd Msg
-initialCmd =
-    Http.post
-        { url = "https://mandrillapp.com/api/1.0/messages/list-scheduled.json"
-        , body = Http.jsonBody (Encode.object [ ( "key", Encode.string "REDACTED" ) ])
-        , expect = Http.expectJson GotMessages (list messageDecoder)
-        }
+    | ClickedCancel Message
 
 
 reloadCmd : Cmd Msg
@@ -69,6 +62,21 @@ reloadCmd =
         { url = "https://mandrillapp.com/api/1.0/messages/list-scheduled.json"
         , body = Http.jsonBody (Encode.object [ ( "key", Encode.string "REDACTED" ) ])
         , expect = Http.expectJson GotMessages (list messageDecoder)
+        }
+
+
+cancelMessageCmd : Message -> Cmd Msg
+cancelMessageCmd message =
+    Http.post
+        { url = "https://mandrillapp.com/api/1.0/messages/cancel-scheduled.json"
+        , body =
+            Http.jsonBody
+                (Encode.object
+                    [ ( "key", Encode.string "REDACTED" )
+                    , ( "id", Encode.string message.id )
+                    ]
+                )
+        , expect = Http.expectJson GotMessage messageDecoder
         }
 
 
@@ -88,8 +96,17 @@ update msg model =
         GotMessages (Err httpError) ->
             ( { model | status = Errored "Server error" }, Cmd.none )
 
+        GotMessage (Ok message) ->
+            ( { model | status = Loaded model.messages }, Cmd.none )
+
+        GotMessage (Err httpError) ->
+            ( { model | status = Errored "Server error" }, Cmd.none )
+
         ClickedReload ->
             ( { model | status = Loading }, reloadCmd )
+
+        ClickedCancel message ->
+            ( { model | status = Loading }, cancelMessageCmd message )
 
 
 view : Model -> Html Msg
@@ -130,6 +147,7 @@ tableHead =
         , th [ class "pv2 ph3 tl" ] [ text "Subject" ]
         , th [ class "pv2 ph3 tl" ] [ text "From" ]
         , th [ class "pv2 ph3 tl" ] [ text "Created" ]
+        , th [ class "pv2 ph3 tr" ] [ text "Actions" ]
         ]
 
 
@@ -141,13 +159,20 @@ viewMessage message =
         , td [ class "pv2 ph3 " ] [ text message.subject ]
         , td [ class "pv2 ph3 " ] [ text message.fromEmail ]
         , td [ class "pv2 ph3 " ] [ text message.createdAt ]
+        , td [ class "pv2 ph3 " ]
+            [ a
+                [ class "link underline u pl4 pointer"
+                , onClick (ClickedCancel message)
+                ]
+                [ text "Cancel" ]
+            ]
         ]
 
 
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \flags -> ( initialModel, initialCmd )
+        { init = \flags -> ( initialModel, reloadCmd )
         , view = view
         , update = update
         , subscriptions = \_ -> Sub.none
