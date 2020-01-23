@@ -13,6 +13,7 @@ import List exposing (filter)
 type alias Model =
     { messages : List Message
     , status : Status
+    , apiKey : String
     }
 
 
@@ -20,6 +21,7 @@ initialModel : Model
 initialModel =
     { messages = []
     , status = Loading
+    , apiKey = ""
     }
 
 
@@ -58,23 +60,23 @@ type Msg
     | GotCancelResponse (Result Http.Error Message)
 
 
-reloadCmd : Cmd Msg
-reloadCmd =
+reloadCmd : String -> Cmd Msg
+reloadCmd apiKey =
     Http.post
         { url = "https://mandrillapp.com/api/1.0/messages/list-scheduled.json"
-        , body = Http.jsonBody (Encode.object [ ( "key", Encode.string "REDACTED" ) ])
+        , body = Http.jsonBody (Encode.object [ ( "key", Encode.string apiKey ) ])
         , expect = Http.expectJson GotMessages (list messageDecoder)
         }
 
 
-cancelMessageCmd : Message -> Cmd Msg
-cancelMessageCmd message =
+cancelMessageCmd : String -> Message -> Cmd Msg
+cancelMessageCmd apiKey message =
     Http.post
         { url = "https://mandrillapp.com/api/1.0/messages/cancel-scheduled.json"
         , body =
             Http.jsonBody
                 (Encode.object
-                    [ ( "key", Encode.string "REDACTED" )
+                    [ ( "key", Encode.string apiKey )
                     , ( "id", Encode.string message.id )
                     ]
                 )
@@ -118,10 +120,10 @@ update msg model =
             ( { model | status = Errored "Server error" }, Cmd.none )
 
         ClickedReload ->
-            ( { model | status = Loading }, reloadCmd )
+            ( { model | status = Loading }, reloadCmd model.apiKey )
 
         ClickedCancel message ->
-            ( { model | status = Loading }, cancelMessageCmd message )
+            ( { model | status = Loading }, cancelMessageCmd model.apiKey message )
 
         GotCancelResponse (Err httpError) ->
             ( { model | status = Errored "Server error" }, Cmd.none )
@@ -198,7 +200,7 @@ viewMessage message =
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \flags -> ( initialModel, reloadCmd )
+        { init = \flags -> ( initialModel, reloadCmd initialModel.apiKey )
         , view = view
         , update = update
         , subscriptions = \_ -> Sub.none
