@@ -7,6 +7,7 @@ import Html.Events exposing (onClick)
 import Http
 import Json.Decode exposing (Decoder, field, list, map6, string)
 import Json.Encode as Encode
+import List exposing (filter)
 
 
 type alias Model =
@@ -54,6 +55,7 @@ type Msg
     | GotMessage (Result Http.Error Message)
     | ClickedReload
     | ClickedCancel Message
+    | GotCancelResponse (Result Http.Error Message)
 
 
 reloadCmd : Cmd Msg
@@ -76,8 +78,13 @@ cancelMessageCmd message =
                     , ( "id", Encode.string message.id )
                     ]
                 )
-        , expect = Http.expectJson GotMessage messageDecoder
+        , expect = Http.expectJson GotCancelResponse messageDecoder
         }
+
+
+isNotMessage : Message -> Message -> Bool
+isNotMessage message other =
+    message.id /= other.id
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -115,6 +122,17 @@ update msg model =
 
         ClickedCancel message ->
             ( { model | status = Loading }, cancelMessageCmd message )
+
+        GotCancelResponse (Err httpError) ->
+            ( { model | status = Errored "Server error" }, Cmd.none )
+
+        GotCancelResponse (Ok message) ->
+            ( { model
+                | messages = filter (isNotMessage message) model.messages
+                , status = Loaded
+              }
+            , Cmd.none
+            )
 
 
 view : Model -> Html Msg
