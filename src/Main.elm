@@ -45,7 +45,7 @@ messageDecoder =
 
 type Status
     = Loading
-    | Loaded (List Message)
+    | Loaded
     | Errored String
 
 
@@ -86,7 +86,10 @@ update msg model =
         GotMessages (Ok messages) ->
             case messages of
                 first :: rest ->
-                    ( { model | status = Loaded messages }
+                    ( { model
+                        | status = Loaded
+                        , messages = messages
+                      }
                     , Cmd.none
                     )
 
@@ -97,7 +100,12 @@ update msg model =
             ( { model | status = Errored "Server error" }, Cmd.none )
 
         GotMessage (Ok message) ->
-            ( { model | status = Loaded model.messages }, Cmd.none )
+            ( { model
+                | status = Loaded
+                , messages = model.messages
+              }
+            , Cmd.none
+            )
 
         GotMessage (Err httpError) ->
             ( { model | status = Errored "Server error" }, Cmd.none )
@@ -113,8 +121,8 @@ view : Model -> Html Msg
 view model =
     div [ class "content" ]
         (case model.status of
-            Loaded messages ->
-                viewMessages messages
+            Loaded ->
+                viewMessages model.messages
 
             Loading ->
                 [ text "Loading" ]
