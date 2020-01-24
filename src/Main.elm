@@ -2,8 +2,8 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (class)
-import Html.Events exposing (onClick)
+import Html.Attributes exposing (class, for, id, type_, value)
+import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode exposing (Decoder, field, list, map6, string)
 import Json.Encode as Encode
@@ -20,7 +20,7 @@ type alias Model =
 initialModel : Model
 initialModel =
     { messages = []
-    , status = Loading
+    , status = Loaded
     , apiKey = ""
     }
 
@@ -58,6 +58,7 @@ type Msg
     | ClickedReload
     | ClickedCancel Message
     | GotCancelResponse (Result Http.Error Message)
+    | InputApiKey String
 
 
 reloadCmd : String -> Cmd Msg
@@ -136,17 +137,31 @@ update msg model =
             , Cmd.none
             )
 
+        InputApiKey apiKey ->
+            ( { model | apiKey = apiKey }, Cmd.none )
+
 
 view : Model -> Html Msg
 view model =
     div [ class "content" ]
         [ div [ class "center ph3 ph5-ns ph0l" ]
             [ h1 [ class "f5 f4-ns f3-l normal pt5 pt6-ns black-50" ] [ text "Messages" ]
-            , a
-                [ class "link underline u pl4 pointer"
-                , onClick ClickedReload
+            , div [ class "w-100 mv2" ]
+                [ label [ for "apiKey" ] [ text "API Key: " ]
+                , input
+                    [ class "ba pv2"
+                    , id "apiKey"
+                    , type_ "password"
+                    , value model.apiKey
+                    , onInput InputApiKey
+                    ]
+                    [ text model.apiKey ]
+                , a
+                    [ class "link underline u pl4 pointer"
+                    , onClick ClickedReload
+                    ]
+                    [ text "Reload" ]
                 ]
-                [ text "Reload" ]
             , div [ class "w-100 pv4 b--black-50" ]
                 [ table [ class "collapse" ] (List.append [ tableHead ] (viewMessages model))
                 ]
@@ -199,7 +214,7 @@ viewMessage message =
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \flags -> ( initialModel, reloadCmd initialModel.apiKey )
+        { init = \flags -> ( initialModel, Cmd.none )
         , view = view
         , update = update
         , subscriptions = \_ -> Sub.none
