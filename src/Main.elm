@@ -140,32 +140,31 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ class "content" ]
-        (case model.status of
-            Loaded ->
-                viewMessages model.messages
-
-            Loading ->
-                [ text "Loading" ]
-
-            Errored errorMessage ->
-                [ text ("Error: " ++ errorMessage) ]
-        )
-
-
-viewMessages : List Message -> List (Html Msg)
-viewMessages messages =
-    [ div [ class "center ph3 ph5-ns ph0l" ]
-        [ h1 [ class "f5 f4-ns f3-l normal pt5 pt6-ns black-50" ] [ text "Messages" ]
-        , a
-            [ class "link underline u pl4 pointer"
-            , onClick ClickedReload
-            ]
-            [ text "Reload" ]
-        , div [ class "w-100 pv4 b--black-50" ]
-            [ table [ class "collapse" ] (List.append [ tableHead ] (List.map viewMessage messages))
+        [ div [ class "center ph3 ph5-ns ph0l" ]
+            [ h1 [ class "f5 f4-ns f3-l normal pt5 pt6-ns black-50" ] [ text "Messages" ]
+            , a
+                [ class "link underline u pl4 pointer"
+                , onClick ClickedReload
+                ]
+                [ text "Reload" ]
+            , div [ class "w-100 pv4 b--black-50" ]
+                [ table [ class "collapse" ] (List.append [ tableHead ] (viewMessages model))
+                ]
             ]
         ]
-    ]
+
+
+viewMessages : Model -> List (Html Msg)
+viewMessages model =
+    case model.status of
+        Loaded ->
+            List.map viewMessage model.messages
+
+        Loading ->
+            [ text "Loading" ]
+
+        Errored errorMessage ->
+            [ text ("Error: " ++ errorMessage) ]
 
 
 tableHead =
