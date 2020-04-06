@@ -64,7 +64,8 @@ type Msg
 reloadCmd : String -> Cmd Msg
 reloadCmd apiKey =
     Http.post
-        { url = "https://mandrillapp.com/api/1.0/messages/list-scheduled.json"
+        --{ url = "https://mandrillapp.com/api/1.0/messages/list-scheduled.json"
+        { url = "http://localhost:8080/api/1.0/messages/list-scheduled.json"
         , body = Http.jsonBody (Encode.object [ ( "key", Encode.string apiKey ) ])
         , expect = Http.expectJson GotMessages (list messageDecoder)
         }
@@ -73,7 +74,8 @@ reloadCmd apiKey =
 cancelMessageCmd : String -> Message -> Cmd Msg
 cancelMessageCmd apiKey message =
     Http.post
-        { url = "https://mandrillapp.com/api/1.0/messages/cancel-scheduled.json"
+        --{ url = "https://mandrillapp.com/api/1.0/messages/cancel-scheduled.json"
+        { url = "http://localhost:8080/api/1.0/messages/cancel-scheduled.json"
         , body =
             Http.jsonBody
                 (Encode.object
